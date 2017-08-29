@@ -1,8 +1,9 @@
 /** dimensiones para el canvas */
 
-var viewNChunckV = 5
-var viewNChunckH = 5
+var viewNChunckV = 5;
+var viewNChunckH = 5;
 var chunksize = 100;
+var npoints = 10;
 
 /** dimensiones para el calculo de las zonas */
 var calcWidthMax
@@ -21,12 +22,12 @@ var noisesql = 100;
 
 var chunkposx = 0;
 var chunkposy = 0;
-var chunkposxround = 2;
-var chunkposyround = 2;
+var chunkposxround = 1;
+var chunkposyround = 1;
 
 var posx = 0;
 var posy = 0;
-var vertices
+var vertices = [];
 
 function setup() {
     var canvasSizex = (viewNChunckH) * chunksize
@@ -34,9 +35,10 @@ function setup() {
     /*   viewoffsetx = viewNChunckH * chunksize / 2
       viewoffsety = viewNChunckV * chunksize / 2 */
 
-    createCanvas(300, 300);
+    createCanvas(canvasSizex, canvasSizey);
 
     noiseSeed(seed)
+
 
 
 
@@ -45,46 +47,41 @@ function setup() {
         color(253, 224, 239), color(247, 247, 247), color(230, 245, 208),
         color(184, 225, 134), color(127, 188, 65), color(77, 146, 33)
     ];
+    /*     var tempx = (viewNChunckH - 1) * chunksize / 2
+        var tempy = (viewNChunckV - 1) * chunksize / 2 */
+    var tempx = (width) / 2 - chunksize / 2
+    var tempy = (height) / 2 - chunksize / 2
+    this.vertices = generateVertex(chunkposx, chunkposy, tempx, tempy)
 
 }
 
 function draw() {
     background(255)
-    posy += 1;
-    if (0 == posy % chunksize) {
 
-        //print("(", chunkposx - chunkposxround, ",", chunkposy - chunkposyround, ")-(", chunkposx + chunkposxround, ",", chunkposy + chunkposxround, ")")
-        // print(chunkposx + chunkposxround, chunkposy + chunkposxround)
-        chunkposy += 1;
-    }
-    /** Generación de los vértices para los chunk inplicados 
-     * el central y los de alrededor
-     */
 
-    var vertices = []
-    for (var i = chunkposx - chunkposxround; i <= chunkposx + chunkposxround; i++) {
-        for (j = chunkposy - chunkposyround; j <= chunkposy + chunkposxround; j++) {
-            temp = generateChunckVertices(i, j)
-            vertices = concatenar(vertices, temp)
-        }
-    }
+    //print("(", chunkposx - chunkposxround, ",", chunkposy - chunkposyround, ")-(", chunkposx + chunkposxround, ",", chunkposy + chunkposxround, ")")
+    // print(chunkposx + chunkposxround, chunkposy + chunkposxround)
+    //chunkposy += 1;
+    //vertices = generateVertex(chunkposy, chunkposx)
+
+
     /**traslación de los puntos al centro de la pantalla*/
-    var transladados = vertices.map(function (d) {
-        d[0] += (viewNChunckH - 1) * chunksize / 2;
-        d[1] += (viewNChunckV - 1) * chunksize / 2;
-    });
+    /*     var transladados = this.vertices.map(function (d) {
+            d[0] += (viewNChunckH - 1) * chunksize / 2;
+            d[1] += (viewNChunckV - 1) * chunksize / 2;
+        }); */
     calcWidthMax = viewNChunckH * chunksize
     calcWidthMin = 0
-    calcHeightMax = viewNChunckV * chunksize + posy
-    calcHeightMin = posy
+    calcHeightMax = viewNChunckV * chunksize
+    calcHeightMin = 0
     voronoi = d3.geom.voronoi()
         .clipExtent([
             [calcWidthMin, calcHeightMin],
             [calcWidthMax, calcHeightMax]
         ]);
-    var polygon = voronoi(vertices);
+    var polygon = voronoi(this.vertices);
     stroke(0);
-    var circles = vertices.slice(1);
+    var circles = this.vertices.slice(1);
 
 
     for (var j = 0; j < polygon.length; j++) {
@@ -96,7 +93,7 @@ function draw() {
         for (var k = 0; k < apolygon.length; k++) {
 
             var v = apolygon[k];
-            vertex(v[0], v[1] - posy);
+            vertex(v[0], v[1]);
 
         }
         endShape(CLOSE);
@@ -108,11 +105,20 @@ function draw() {
         var center = circles[i];
 
         push();
-        translate(center[0], center[1] - posy);
+        translate(center[0], center[1]);
         //fill(200, 200, 0);
         ellipse(0, 0, 1.5, 1.5);
         pop();
     }
+    var centrovisiblex = width / 2
+    var centrovisibley = height / 2
+    push();
+    translate(centrovisiblex, centrovisibley);
+    ellipse(0, 0, 15, 15);
+    pop();
+    stroke(color(255, 0, 255))
+    line(width / 2, 0, width / 2, height)
+    line(0, height / 2, width, height / 2)
 
     //showChunk();
 }
@@ -123,36 +129,40 @@ function concatenar(lista1, lista2) {
     }
     return lista1
 }
-
-function generateChunckVertices(x, y) {
-    xoff = 0;
-    yoff = 1000;
-    tx = x;
-    ty = y;
-    vertices = d3.range(25).map(function (d) {
-
-        x = map(noise(xoff + tx), 0, 1, tx * chunksize, tx * chunksize + chunksize);
-        y = map(noise(yoff + ty), 0, 1, ty * chunksize, ty * chunksize + chunksize);
-        xoff += noisesql
-        yoff += noisesql
-        return [x, y]
-    });
-    return vertices
+/**
+ * Todos los vértices
+ * @param {number} chunkposx 
+ * @param {number} chunkposy 
+ */
+function generateVertex(chunkposx, chunkposy, xoff, yoff) {
+    var total = []
+    for (var i = chunkposx - this.chunkposxround; i <= chunkposx + this.chunkposxround; i++) {
+        for (j = chunkposy - this.chunkposyround; j <= chunkposy + this.chunkposyround; j++) {
+            temp = generateChunckVertices(i, j, xoff, yoff)
+            total = concatenar(total, temp)
+        }
+    }
+    return total
 }
 
-function showChunk() {
-    for (var i = 0; i < width; i += chunksize) {
-        stroke(0)
-        push()
+function generateChunckVertices(tx, ty, xoff, yoff) {
+    noisexoff = 0;
+    noiseyoff = 1000;
+    pxini = tx * chunksize + xoff;
+    pxfin = pxini + chunksize;
+    pyini = ty * chunksize + yoff;
+    pyfin = pyini + chunksize;
+    /*   tx = x;
+      ty = y; */
+    var verticeschunk = d3.range(this.npoints).map(function (d) {
 
-        line(i, 0, i, height)
-        pop()
-    }
-    for (var j = 0; j < height; j += chunksize) {
-        stroke(0)
-        push()
-
-        line(0, j, width, j)
-        pop()
-    }
+        x = map(noise(noisexoff + tx), 0, 1, pxini, pxfin);
+        y = map(noise(noiseyoff + ty), 0, 1, pyini, pyfin);
+        // x = map(0.5, 0, 1, pxini, pxfin);
+        // y = map(0.5, 0, 1, pyini, pyfin);
+        noisexoff += noisesql
+        noiseyoff += noisesql
+        return [x, y]
+    });
+    return verticeschunk
 }
