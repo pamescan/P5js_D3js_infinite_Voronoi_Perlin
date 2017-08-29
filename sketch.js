@@ -62,13 +62,16 @@ function setup() {
 function draw() {
     background(255)
     posy += 1;
+    posx += 1;
     if (posy % chunksize == 0) {
-        print(posy)
         chunkposy += 1;
+        calculate(chunkposx, chunkposy)
+    }
+    if (posx % chunksize == 0) {
+        chunkposx += 1;
         calculate(chunkposx, chunkposy)
 
     }
-
 
 
     stroke(255);
@@ -81,7 +84,7 @@ function draw() {
         for (var k = 0; k < apolygon.length; k++) {
 
             var v = apolygon[k];
-            vertex(v[0], v[1] - posy);
+            vertex(v[0] - posx, v[1] - posy);
 
         }
         endShape(CLOSE);
@@ -93,7 +96,7 @@ function draw() {
         var center = circles[i];
 
         push();
-        translate(center[0], center[1] - posy);
+        translate(center[0] - posx, center[1] - posy);
         //fill(200, 200, 0);
         ellipse(0, 0, 1.5, 1.5);
         pop();
