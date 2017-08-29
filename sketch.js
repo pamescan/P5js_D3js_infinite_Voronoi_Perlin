@@ -2,6 +2,8 @@
 
 var viewNChunckV = 5;
 var viewNChunckH = 5;
+var offsetx;
+var offsety;
 var chunksize = 100;
 var npoints = 10;
 
@@ -22,12 +24,15 @@ var noisesql = 100;
 
 var chunkposx = 0;
 var chunkposy = 0;
-var chunkposxround = 1;
-var chunkposyround = 1;
+var chunkposxround = 3;
+var chunkposyround = 3;
 
 var posx = 0;
 var posy = 0;
 var vertices = [];
+var voronoi;
+var circles;
+var polygon;
 
 function setup() {
     var canvasSizex = (viewNChunckH) * chunksize
@@ -49,43 +54,26 @@ function setup() {
     ];
     /*     var tempx = (viewNChunckH - 1) * chunksize / 2
         var tempy = (viewNChunckV - 1) * chunksize / 2 */
-    var tempx = (width) / 2 - chunksize / 2
-    var tempy = (height) / 2 - chunksize / 2
-    this.vertices = generateVertex(chunkposx, chunkposy, tempx, tempy)
-
+    offsetx = (width) / 2 - chunksize / 2
+    offsety = (height) / 2 - chunksize / 2
+    calculate(chunkposx, chunkposy)
 }
 
 function draw() {
     background(255)
+    posy += 1;
+    if (posy % chunksize == 0) {
+        print(posy)
+        chunkposy += 1;
+        calculate(chunkposx, chunkposy)
+
+    }
 
 
-    //print("(", chunkposx - chunkposxround, ",", chunkposy - chunkposyround, ")-(", chunkposx + chunkposxround, ",", chunkposy + chunkposxround, ")")
-    // print(chunkposx + chunkposxround, chunkposy + chunkposxround)
-    //chunkposy += 1;
-    //vertices = generateVertex(chunkposy, chunkposx)
 
-
-    /**traslación de los puntos al centro de la pantalla*/
-    /*     var transladados = this.vertices.map(function (d) {
-            d[0] += (viewNChunckH - 1) * chunksize / 2;
-            d[1] += (viewNChunckV - 1) * chunksize / 2;
-        }); */
-    calcWidthMax = viewNChunckH * chunksize
-    calcWidthMin = 0
-    calcHeightMax = viewNChunckV * chunksize
-    calcHeightMin = 0
-    voronoi = d3.geom.voronoi()
-        .clipExtent([
-            [calcWidthMin, calcHeightMin],
-            [calcWidthMax, calcHeightMax]
-        ]);
-    var polygon = voronoi(this.vertices);
-    stroke(0);
-    var circles = this.vertices.slice(1);
-
-
-    for (var j = 0; j < polygon.length; j++) {
-        var apolygon = polygon[j];
+    stroke(255);
+    for (var j = 0; j < this.polygon.length; j++) {
+        var apolygon = this.polygon[j];
         var polyColor = vcolors[j % vcolors.length];
         fill(color(184, 225, 134));
 
@@ -93,7 +81,7 @@ function draw() {
         for (var k = 0; k < apolygon.length; k++) {
 
             var v = apolygon[k];
-            vertex(v[0], v[1]);
+            vertex(v[0], v[1] - posy);
 
         }
         endShape(CLOSE);
@@ -105,22 +93,34 @@ function draw() {
         var center = circles[i];
 
         push();
-        translate(center[0], center[1]);
+        translate(center[0], center[1] - posy);
         //fill(200, 200, 0);
         ellipse(0, 0, 1.5, 1.5);
         pop();
     }
-    var centrovisiblex = width / 2
-    var centrovisibley = height / 2
-    push();
-    translate(centrovisiblex, centrovisibley);
-    ellipse(0, 0, 15, 15);
-    pop();
-    stroke(color(255, 0, 255))
-    line(width / 2, 0, width / 2, height)
-    line(0, height / 2, width, height / 2)
 
-    //showChunk();
+
+    showGrid();
+}
+
+function calculate(chunkposx, chunkposy) {
+    this.vertices = generateVertex(chunkposx, chunkposy, this.offsetx, this.offsety)
+    /*     calcWidthMax = (viewNChunckH + chunkposx) * chunksize
+        calcWidthMin = chunkposx
+        calcHeightMax = (viewNChunckV + chunkposy) * chunksize
+        calcHeightMin = chunkposy */
+    calcWidthMax = (chunkposx + 2 * chunkposxround + 1) * chunksize
+    calcWidthMin = (chunkposx) * chunksize
+    calcHeightMax = (chunkposy + 2 * chunkposyround + 1) * chunksize
+    calcHeightMin = (chunkposy) * chunksize
+    this.voronoi = d3.geom.voronoi()
+        .clipExtent([
+            [calcWidthMin, calcHeightMin],
+            [calcWidthMax, calcHeightMax]
+        ]);
+    this.polygon = this.voronoi(this.vertices);
+    stroke(0);
+    this.circles = this.vertices.slice(1);
 }
 
 function concatenar(lista1, lista2) {
@@ -165,4 +165,16 @@ function generateChunckVertices(tx, ty, xoff, yoff) {
         return [x, y]
     });
     return verticeschunk
+}
+
+function showGrid() {
+    var centrovisiblex = width / 2
+    var centrovisibley = height / 2
+    push();
+    translate(centrovisiblex, centrovisibley);
+    ellipse(0, 0, 15, 15);
+    pop();
+    stroke(color(255, 0, 255))
+    line(width / 2, 0, width / 2, height)
+    line(0, height / 2, width, height / 2)
 }
