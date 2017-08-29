@@ -10,8 +10,8 @@ var calcHeightMax
 var calcWidthMin
 var calcHeightMin
 
-var viewoffsetx
-var viewoffsety
+/* var viewoffsetx
+var viewoffsety */
 
 var seed = 1;
 var noisesql = 100;
@@ -21,27 +21,24 @@ var noisesql = 100;
 
 var chunkposx = 0;
 var chunkposy = 0;
-var chunkposxround = 1;
-var chunkposyround = 1;
+var chunkposxround = 2;
+var chunkposyround = 2;
 
 var posx = 0;
 var posy = 0;
 var vertices
 
 function setup() {
-    var canvasSizex = (viewNChunckH + 1) * chunksize
-    var canvasSizey = (viewNChunckV + 1) * chunksize
-    viewoffsetx = viewNChunckH * chunksize / 2
-    viewoffsety = viewNChunckV * chunksize / 2
+    var canvasSizex = (viewNChunckH) * chunksize
+    var canvasSizey = (viewNChunckV) * chunksize
+    /*   viewoffsetx = viewNChunckH * chunksize / 2
+      viewoffsety = viewNChunckV * chunksize / 2 */
 
-    createCanvas(canvasSizex - chunksize, canvasSizey - chunksize);
+    createCanvas(300, 300);
 
     noiseSeed(seed)
 
-    calcWidthMax = viewNChunckH * chunksize
-    calcWidthMin = 0
-    calcHeightMax = viewNChunckV * chunksize
-    calcHeightMin = 0
+
 
     vcolors = [
         color(197, 27, 125), color(222, 119, 174), color(241, 182, 218),
@@ -53,7 +50,13 @@ function setup() {
 
 function draw() {
     background(255)
+    posy += 1;
+    if (0 == posy % chunksize) {
 
+        //print("(", chunkposx - chunkposxround, ",", chunkposy - chunkposyround, ")-(", chunkposx + chunkposxround, ",", chunkposy + chunkposxround, ")")
+        // print(chunkposx + chunkposxround, chunkposy + chunkposxround)
+        chunkposy += 1;
+    }
     /** Generación de los vértices para los chunk inplicados 
      * el central y los de alrededor
      */
@@ -65,33 +68,35 @@ function draw() {
             vertices = concatenar(vertices, temp)
         }
     }
-
+    /**traslación de los puntos al centro de la pantalla*/
     var transladados = vertices.map(function (d) {
-        console.log(d);
         d[0] += (viewNChunckH - 1) * chunksize / 2;
         d[1] += (viewNChunckV - 1) * chunksize / 2;
     });
-
+    calcWidthMax = viewNChunckH * chunksize
+    calcWidthMin = 0
+    calcHeightMax = viewNChunckV * chunksize + posy
+    calcHeightMin = posy
     voronoi = d3.geom.voronoi()
         .clipExtent([
             [calcWidthMin, calcHeightMin],
             [calcWidthMax, calcHeightMax]
         ]);
     var polygon = voronoi(vertices);
-    stroke(255);
+    stroke(0);
     var circles = vertices.slice(1);
 
 
     for (var j = 0; j < polygon.length; j++) {
         var apolygon = polygon[j];
         var polyColor = vcolors[j % vcolors.length];
-        fill(polyColor);
+        fill(color(184, 225, 134));
 
         beginShape();
         for (var k = 0; k < apolygon.length; k++) {
 
             var v = apolygon[k];
-            vertex(v[0], v[1]);
+            vertex(v[0], v[1] - posy);
 
         }
         endShape(CLOSE);
@@ -103,8 +108,8 @@ function draw() {
         var center = circles[i];
 
         push();
-        translate(center[0], center[1]);
-        fill(200, 200, 0);
+        translate(center[0], center[1] - posy);
+        //fill(200, 200, 0);
         ellipse(0, 0, 1.5, 1.5);
         pop();
     }
@@ -124,14 +129,12 @@ function generateChunckVertices(x, y) {
     yoff = 1000;
     tx = x;
     ty = y;
-    vertices = d3.range(5).map(function (d) {
+    vertices = d3.range(25).map(function (d) {
 
         x = map(noise(xoff + tx), 0, 1, tx * chunksize, tx * chunksize + chunksize);
         y = map(noise(yoff + ty), 0, 1, ty * chunksize, ty * chunksize + chunksize);
         xoff += noisesql
         yoff += noisesql
-
-
         return [x, y]
     });
     return vertices
