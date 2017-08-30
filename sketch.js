@@ -1,11 +1,11 @@
 /** dimensiones para el canvas */
 
-var viewNChunckV = 5;
-var viewNChunckH = 5;
+var viewNChunckV = 6;
+var viewNChunckH = 6;
 var offsetx;
 var offsety;
-var chunksize = 100;
-var npoints = 10;
+var chunksize = 50;
+var npoints = 3;
 
 /** dimensiones para el calculo de las zonas */
 var calcWidthMax
@@ -24,8 +24,8 @@ var noisesql = 100;
 
 var chunkposx = 0;
 var chunkposy = 0;
-var chunkposxround = 3;
-var chunkposyround = 3;
+var chunkposxround = 5;
+var chunkposyround = 5;
 
 var posx = 0;
 var posy = 0;
@@ -34,26 +34,24 @@ var voronoi;
 var circles;
 var polygon;
 
+
+
 function setup() {
+    chunkposxround = viewNChunckH
+    chunkposyround = viewNChunckV
     var canvasSizex = (viewNChunckH) * chunksize
     var canvasSizey = (viewNChunckV) * chunksize
-    /*   viewoffsetx = viewNChunckH * chunksize / 2
-      viewoffsety = viewNChunckV * chunksize / 2 */
 
     createCanvas(canvasSizex, canvasSizey);
 
     noiseSeed(seed)
-
-
-
 
     vcolors = [
         color(197, 27, 125), color(222, 119, 174), color(241, 182, 218),
         color(253, 224, 239), color(247, 247, 247), color(230, 245, 208),
         color(184, 225, 134), color(127, 188, 65), color(77, 146, 33)
     ];
-    /*     var tempx = (viewNChunckH - 1) * chunksize / 2
-        var tempy = (viewNChunckV - 1) * chunksize / 2 */
+
     offsetx = (width) / 2 - chunksize / 2
     offsety = (height) / 2 - chunksize / 2
     calculate(chunkposx, chunkposy)
@@ -61,15 +59,27 @@ function setup() {
 
 function draw() {
     background(255)
-    posy += 1;
-    posx += 1;
+    if (mouseY > height / 3) {
+        posy += 1;
+    } else {
+
+        posy -= 1
+    }
+
+    if (mouseX > width / 2) {
+        posx += 1;
+    } else {
+        posx -= 1;
+    }
+
     if (posy % chunksize == 0) {
-        chunkposy += 1;
-        calculate(chunkposx, chunkposy)
+
+        this.chunkposy = posy / chunksize;
+        calculate(this.chunkposx, this.chunkposy)
     }
     if (posx % chunksize == 0) {
-        chunkposx += 1;
-        calculate(chunkposx, chunkposy)
+        this.chunkposx = posx / chunksize
+        calculate(this.chunkposx, this.chunkposy)
 
     }
 
@@ -77,8 +87,8 @@ function draw() {
     stroke(255);
     for (var j = 0; j < this.polygon.length; j++) {
         var apolygon = this.polygon[j];
-        var polyColor = vcolors[j % vcolors.length];
-        fill(color(184, 225, 134));
+        var polyColor = vcolors[apolygon.length % vcolors.length];
+        fill(polyColor);
 
         beginShape();
         for (var k = 0; k < apolygon.length; k++) {
@@ -103,19 +113,16 @@ function draw() {
     }
 
 
-    showGrid();
+    //showGrid();
 }
 
 function calculate(chunkposx, chunkposy) {
     this.vertices = generateVertex(chunkposx, chunkposy, this.offsetx, this.offsety)
-    /*     calcWidthMax = (viewNChunckH + chunkposx) * chunksize
-        calcWidthMin = chunkposx
-        calcHeightMax = (viewNChunckV + chunkposy) * chunksize
-        calcHeightMin = chunkposy */
-    calcWidthMax = (chunkposx + 2 * chunkposxround + 1) * chunksize
-    calcWidthMin = (chunkposx) * chunksize
-    calcHeightMax = (chunkposy + 2 * chunkposyround + 1) * chunksize
-    calcHeightMin = (chunkposy) * chunksize
+
+    calcWidthMax = (chunkposx + 2 * viewNChunckH) * chunksize
+    calcWidthMin = (chunkposx - viewNChunckH) * chunksize
+    calcHeightMax = (chunkposy + 2 * viewNChunckV) * chunksize
+    calcHeightMin = (chunkposy - viewNChunckV) * chunksize
     this.voronoi = d3.geom.voronoi()
         .clipExtent([
             [calcWidthMin, calcHeightMin],
@@ -161,8 +168,7 @@ function generateChunckVertices(tx, ty, xoff, yoff) {
 
         x = map(noise(noisexoff + tx), 0, 1, pxini, pxfin);
         y = map(noise(noiseyoff + ty), 0, 1, pyini, pyfin);
-        // x = map(0.5, 0, 1, pxini, pxfin);
-        // y = map(0.5, 0, 1, pyini, pyfin);
+
         noisexoff += noisesql
         noiseyoff += noisesql
         return [x, y]
